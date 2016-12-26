@@ -2,31 +2,99 @@ local aabb
 do
   local _class_0
   local _base_0 = {
-    update = function(self, dt)
-      if love.keyboard.isDown("w") then
-        self.y = self.y - (200 * dt)
-      end
-      if love.keyboard.isDown("a") then
-        self.x = self.x - (200 * dt)
-      end
-      if love.keyboard.isDown("s") then
-        self.y = self.y + (200 * dt)
-      end
-      if love.keyboard.isDown("d") then
-        self.x = self.x + (200 * dt)
+    drawShape = function(self)
+      love.graphics.rectangle("line", self.x - self.offset.x, self.y - self.offset.y, self.w, self.h)
+      love.graphics.setColor(255, 0, 255)
+      love.graphics.setPointSize(4)
+      love.graphics.points(self.x, self.y)
+      return love.graphics.setColor(255, 255, 255)
+    end,
+    move = function(self, dx, dy)
+      self.x = self.x + dx
+      self.y = self.y + dy
+      local _list_0 = self.AC.shapes
+      for _index_0 = 1, #_list_0 do
+        local _continue_0 = false
+        repeat
+          local shape = _list_0[_index_0]
+          if shape == self then
+            _continue_0 = true
+            break
+          end
+          local coll, mtv = self.AC:isColl(self, shape)
+          if coll then
+            if shape.behavior == "static" then
+              self.x = self.x + -mtv.x
+              self.y = self.y + -mtv.y
+            elseif shape.behavior == "dynamic" then
+              self.x = self.x + -mtv.x / 2
+              self.y = self.y + -mtv.y / 2
+              shape.x = shape.x + (mtv.x / 2)
+              shape.y = shape.y + (mtv.y / 2)
+            end
+          end
+          _continue_0 = true
+        until true
+        if not _continue_0 then
+          break
+        end
       end
     end,
-    draw = function(self)
-      return love.graphics.rectangle("line", self.x, self.y, self.w, self.h)
+    moveTo = function(self, x, y)
+      self.x = x
+      self.y = y
     end
   }
   _base_0.__index = _base_0
   _class_0 = setmetatable({
-    __init = function(self, x, y, w, h)
+    __init = function(self, AC, x, y, w, h, behavior, offset, name)
+      if x == nil then
+        x = 0
+      end
+      if y == nil then
+        y = 0
+      end
+      if w == nil then
+        w = 42
+      end
+      if h == nil then
+        h = 42
+      end
+      if behavior == nil then
+        behavior = "static"
+      end
+      if offset == nil then
+        offset = {
+          0,
+          0
+        }
+      end
+      if name == nil then
+        name = "aabb"
+      end
+      self.AC = AC
       self.x = x
       self.y = y
       self.w = w
       self.h = h
+      self.behavior = behavior
+      self.name = name
+      self.type = "aabb"
+      if behavior ~= "static" and behavior ~= "dynamic" then
+        error("Invalid shape behavior. Valids shape behaviors are 'kynetic' and 'dynamic'")
+      end
+      if offset == "middle" then
+        self.offset = {
+          x = w / 2,
+          y = h / 2
+        }
+      else
+        self.offset = {
+          x = offset[1],
+          y = offset[2]
+        }
+      end
+      return self.AC:addShape(self)
     end,
     __base = _base_0,
     __name = "aabb"
