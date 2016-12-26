@@ -1,10 +1,10 @@
 -- AABB is rectangular shape that does'nt allow rotation
 
 class aabb
-    new: (AC, x = 0, y = 0, w = 42, h = 42, behavior = "static", offset = {0, 0}, name = "aabb") =>
+    new: (AC, w = 42, h = 42, behavior = "static", offset = {0, 0}, name = "aabb") =>
         @AC       = AC
-        @x        = x
-        @y        = y
+        @x        = 0
+        @y        = 0
         @w        = w
         @h        = h
         @behavior = behavior
@@ -35,7 +35,7 @@ class aabb
         for shape in *@AC.shapes
             continue if shape == @
 
-            coll, mtv = @AC\isColl(@, shape)
+            coll, mtv = @AC\isColl(shape, @)
             if coll
                 if shape.behavior == "static"
                     @.x += -mtv.x

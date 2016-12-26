@@ -21,7 +21,7 @@ do
             _continue_0 = true
             break
           end
-          local coll, mtv = self.AC:isColl(self, shape)
+          local coll, mtv = self.AC:isColl(shape, self)
           if coll then
             if shape.behavior == "static" then
               self.x = self.x + -mtv.x
@@ -47,13 +47,7 @@ do
   }
   _base_0.__index = _base_0
   _class_0 = setmetatable({
-    __init = function(self, AC, x, y, w, h, behavior, offset, name)
-      if x == nil then
-        x = 0
-      end
-      if y == nil then
-        y = 0
-      end
+    __init = function(self, AC, w, h, behavior, offset, name)
       if w == nil then
         w = 42
       end
@@ -73,8 +67,8 @@ do
         name = "aabb"
       end
       self.AC = AC
-      self.x = x
-      self.y = y
+      self.x = 0
+      self.y = 0
       self.w = w
       self.h = h
       self.behavior = behavior

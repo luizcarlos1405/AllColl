@@ -4,28 +4,30 @@
 vector = require "../libs/vector-light"
 
 class rectangle
-    new: (AC, r = 0, w = 42, h = 42, behavior = "static", offset = {0, 0}, name = "aabb") =>
+    new: (AC, points = {0, 0, 100, 0, 100, 100}, r = 0, h = 42, behavior = "static", offset = {0, 0}, name = "aabb") =>
+        if #points % 2 ~= 0 or #points < 6
+            error("Not full points or not enough points")
         @AC       = AC
-        @x        = 0
-        @y        = 0
-        @r        = 0
+        @x        = offset[1]
+        @y        = offset[2]
+        @r        = r
         @w        = w
         @h        = h
         @behavior = behavior
         @name     = name
-        @type     = "rectangle"
+        @type     = "polygon"
+        @points   = {}
 
         if offset == "middle"
             @offset = {x: w/2, y:h/2}
         else
             @offset = {x:offset[1], y:offset[2]}
 
-        @points = {
-            {x: @x - @offset.x,      y: @y - @offset.y}
-            {x: @x - @offset.x + @w, y: @y - @offset.y}
-            {x: @x - @offset.x + @w, y: @y - @offset.y + @h}
-            {x: @x - @offset.x,      y: @y - @offset.y + @h}
-        }
+        for i = 1, math.ceil(#points/2)
+            @points[i] = {}
+            @points[i].x = points[2*(i-1)+1]
+            if points[i+1]
+                @points[i].y = points[2*(i-1)+2]
 
         @setAngle(r)
         -- Adiciona à tabe de shapes

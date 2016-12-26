@@ -39,12 +39,19 @@ do
   }
   _base_0.__index = _base_0
   _class_0 = setmetatable({
-    __init = function(self, AC, r, w, h, behavior, offset, name)
+    __init = function(self, AC, points, r, h, behavior, offset, name)
+      if points == nil then
+        points = {
+          0,
+          0,
+          100,
+          0,
+          100,
+          100
+        }
+      end
       if r == nil then
         r = 0
-      end
-      if w == nil then
-        w = 42
       end
       if h == nil then
         h = 42
@@ -61,15 +68,19 @@ do
       if name == nil then
         name = "aabb"
       end
+      if #points % 2 ~= 0 or #points < 6 then
+        error("Not full points or not enough points")
+      end
       self.AC = AC
-      self.x = 0
-      self.y = 0
-      self.r = 0
+      self.x = offset[1]
+      self.y = offset[2]
+      self.r = r
       self.w = w
       self.h = h
       self.behavior = behavior
       self.name = name
-      self.type = "rectangle"
+      self.type = "polygon"
+      self.points = { }
       if offset == "middle" then
         self.offset = {
           x = w / 2,
@@ -81,24 +92,13 @@ do
           y = offset[2]
         }
       end
-      self.points = {
-        {
-          x = self.x - self.offset.x,
-          y = self.y - self.offset.y
-        },
-        {
-          x = self.x - self.offset.x + self.w,
-          y = self.y - self.offset.y
-        },
-        {
-          x = self.x - self.offset.x + self.w,
-          y = self.y - self.offset.y + self.h
-        },
-        {
-          x = self.x - self.offset.x,
-          y = self.y - self.offset.y + self.h
-        }
-      }
+      for i = 1, math.ceil(#points / 2) do
+        self.points[i] = { }
+        self.points[i].x = points[2 * (i - 1) + 1]
+        if points[i + 1] then
+          self.points[i].y = points[2 * (i - 1) + 2]
+        end
+      end
       self:setAngle(r)
       return self.AC:addShape(self)
     end,
