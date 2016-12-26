@@ -5,6 +5,10 @@ vector = require "../libs/vector-light"
 class allcoll
     new: =>
         @shapes = {}
+        @gravity = {x: 0, y: 0}
+
+    setGravity: (gx, gy) =>
+        @gravity = {x: gx, y: gy}
 
     -- Retorna coll, mtv
     -- coll é boleano se houve ou não a colisão, mtv é uma table que é um vetor e contém
@@ -254,7 +258,8 @@ class allcoll
             nx, ny = vector.rotate(da, polygon.points[i].x - polygon.x, polygon.points[i].y - polygon.y)
             polygon.points[i].x = nx + polygon.x
             polygon.points[i].y = ny + polygon.y
-        -- mantém polygon.r entre -2*pi e 2*pi
+
+        -- mantém polygon.r entre -2*pi e 2*pi (não sei se é realmente necessário)
         if polygon.r > 2*math.pi
             polygon.r = polygon.r % (2*math.pi)
         elseif polygon.r < -2*math.pi
@@ -266,28 +271,14 @@ class allcoll
             coll, mtv = @isColl(shape, polygon)
             if coll
                 if polygon.behavior == "static" and shape.behavior == "dynamic"
-                    shape.x -= mtv.x
-                    shape.y -= mtv.y
-                    for i = 1, #shape.points
-                        shape.points[i].x -= mtv.x
-                        shape.points[i].y -= mtv.y
+                    @movePolygon(-mtv.x, -mtv.y, shape)
+
                 elseif polygon.behavior == "dynamic" and shape.behavior == "dynamic"
-                    polygon.x += mtv.x/2
-                    polygon.y += mtv.y/2
-                    for i = 1, #polygon.points
-                        polygon.points[i].x += mtv.x/2
-                        polygon.points[i].y += mtv.y/2
-                    shape.x -= mtv.x/2
-                    shape.y -= mtv.y/2
-                    for i = 1, #shape.points
-                        shape.points[i].x -= mtv.x/2
-                        shape.points[i].y -= mtv.y/2
+                    @movePolygon(mtv.x, mtv.y, polygon)
+                    @movePolygon(-mtv.x, -mtv.y, shape)
+
                 elseif polygon.behavior == "dynamic" and shape.behavior == "statics"
-                    polygon.x += mtv.x
-                    polygon.y += mtv.y
-                    for i = 1, #polygon.points
-                        polygon.points[i].x += mtv.x
-                        polygon.points[i].y += mtv.y
+                    @movePolygon(mtv.x, mtv.y, polygon)
 
     movePolygon: (dx, dy, polygon) =>
         polygon.x += dx
@@ -296,14 +287,12 @@ class allcoll
             polygon.points[i].x += dx
             polygon.points[i].y += dy
 
-        if polygon.behavior == "static"
-            print "WARNING: maybe you shouldn't be moving a static shape."
-
         for shape in *@shapes
             continue if shape == polygon
             coll, mtv = @isColl(shape, polygon)
             if coll
                 if shape.behavior == "static"
+                    -- @movePolygon(mtv.x, mtv.y, polygon)
                     polygon.y += mtv.y
                     polygon.x += mtv.x
                     for i = 1, #polygon.points
@@ -326,6 +315,11 @@ class allcoll
         dx, dy = x - polygon.x, y - polygon.y
 
         @movePolygon(dx, dy, polygon)
+
+    update: (dt) =>
+        for i = 1, #@shapes
+            if @shapes[i].behavior ~= "static"
+                @movePolygon(@gravity.x * dt, @gravity.y * dt, @shapes[i])
 
 
 return allcoll

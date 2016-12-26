@@ -3,6 +3,12 @@ local allcoll
 do
   local _class_0
   local _base_0 = {
+    setGravity = function(self, gx, gy)
+      self.gravity = {
+        x = gx,
+        y = gy
+      }
+    end,
     isColl = function(self, fix, move)
       local mtv = {
         x = 0,
@@ -279,32 +285,12 @@ do
           local coll, mtv = self:isColl(shape, polygon)
           if coll then
             if polygon.behavior == "static" and shape.behavior == "dynamic" then
-              shape.x = shape.x - mtv.x
-              shape.y = shape.y - mtv.y
-              for i = 1, #shape.points do
-                shape.points[i].x = shape.points[i].x - mtv.x
-                shape.points[i].y = shape.points[i].y - mtv.y
-              end
+              self:movePolygon(-mtv.x, -mtv.y, shape)
             elseif polygon.behavior == "dynamic" and shape.behavior == "dynamic" then
-              polygon.x = polygon.x + (mtv.x / 2)
-              polygon.y = polygon.y + (mtv.y / 2)
-              for i = 1, #polygon.points do
-                polygon.points[i].x = polygon.points[i].x + (mtv.x / 2)
-                polygon.points[i].y = polygon.points[i].y + (mtv.y / 2)
-              end
-              shape.x = shape.x - (mtv.x / 2)
-              shape.y = shape.y - (mtv.y / 2)
-              for i = 1, #shape.points do
-                shape.points[i].x = shape.points[i].x - (mtv.x / 2)
-                shape.points[i].y = shape.points[i].y - (mtv.y / 2)
-              end
+              self:movePolygon(mtv.x, mtv.y, polygon)
+              self:movePolygon(-mtv.x, -mtv.y, shape)
             elseif polygon.behavior == "dynamic" and shape.behavior == "statics" then
-              polygon.x = polygon.x + mtv.x
-              polygon.y = polygon.y + mtv.y
-              for i = 1, #polygon.points do
-                polygon.points[i].x = polygon.points[i].x + mtv.x
-                polygon.points[i].y = polygon.points[i].y + mtv.y
-              end
+              self:movePolygon(mtv.x, mtv.y, polygon)
             end
           end
           _continue_0 = true
@@ -320,9 +306,6 @@ do
       for i = 1, #polygon.points do
         polygon.points[i].x = polygon.points[i].x + dx
         polygon.points[i].y = polygon.points[i].y + dy
-      end
-      if polygon.behavior == "static" then
-        print("WARNING: maybe you shouldn't be moving a static shape.")
       end
       local _list_0 = self.shapes
       for _index_0 = 1, #_list_0 do
@@ -367,12 +350,23 @@ do
     movePolygonTo = function(self, x, y, polygon)
       local dx, dy = x - polygon.x, y - polygon.y
       return self:movePolygon(dx, dy, polygon)
+    end,
+    update = function(self, dt)
+      for i = 1, #self.shapes do
+        if self.shapes[i].behavior ~= "static" then
+          self:movePolygon(self.gravity.x * dt, self.gravity.y * dt, self.shapes[i])
+        end
+      end
     end
   }
   _base_0.__index = _base_0
   _class_0 = setmetatable({
     __init = function(self)
       self.shapes = { }
+      self.gravity = {
+        x = 0,
+        y = 0
+      }
     end,
     __base = _base_0,
     __name = "allcoll"

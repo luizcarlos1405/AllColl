@@ -9,20 +9,26 @@ love.load = ->
     export aabb1 = rectangle(AC, 0, 100, 100, "dynamic", "middle", "S1")
     export aabb2 = polygon(AC, {0,-50,30,-20,10,40,-10,40,-30,-20}, nil, nil, "dynamic", {0, 0}, "S2")
     export aabb3 = polygon(AC, nil, nil, nil, "static", {50, 50}, "S3")
+    export floor = rectangle(AC, 0, 900, 100, "static", "middle", "floor")
 
     aabb1\moveTo(200, 200)
     aabb2\moveTo(600, 200)
     aabb3\moveTo(love.graphics.getWidth!/2, love.graphics.getHeight!/2)
+    floor\moveTo(love.graphics.getWidth!/2, love.graphics.getHeight!-50)
+
+    -- AC\setGravity(0, 200)
 
 love.update = (dt) ->
+    AC\update(dt)
+
     if love.keyboard.isDown("w")
-        aabb1\move(0, -200*dt)
+        aabb1\move(0, -400*dt)
     if love.keyboard.isDown("a")
-        aabb1\move(-200*dt, 0)
+        aabb1\move(-400*dt, 0)
     if love.keyboard.isDown("s")
-        aabb1\move(0, 200*dt)
+        aabb1\move(0, 400*dt)
     if love.keyboard.isDown("d")
-        aabb1\move(200*dt, 0)
+        aabb1\move(400*dt, 0)
     if love.keyboard.isDown("e")
         aabb1\rotate(dt)
     if love.keyboard.isDown("q")
@@ -31,13 +37,13 @@ love.update = (dt) ->
         aabb1\setAngle(math.pi/4)
 
     if love.keyboard.isDown("i")
-        aabb2\move(0, -200*dt)
+        aabb2\move(0, -400*dt)
     if love.keyboard.isDown("j")
-        aabb2\move(-200*dt, 0)
+        aabb2\move(-400*dt, 0)
     if love.keyboard.isDown("k")
-        aabb2\move(0, 200*dt)
+        aabb2\move(0, 400*dt)
     if love.keyboard.isDown("l")
-        aabb2\move(200*dt, 0)
+        aabb2\move(400*dt, 0)
     if love.keyboard.isDown("o")
         aabb2\rotate(dt)
     if love.keyboard.isDown("u")
@@ -53,6 +59,7 @@ love.draw = ->
     aabb1\drawShape!
     aabb2\drawShape!
     aabb3\drawShape!
+    floor\drawShape!
 
     love.graphics.print("S1.r: #{aabb1.r}\nS2.r: #{aabb2.r}.
 Move the Rectangle with W A S D and the Pentagon with I J K L.
