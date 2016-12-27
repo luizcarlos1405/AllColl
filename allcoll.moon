@@ -41,8 +41,21 @@ class allcoll
 
             return false, mtv
 
+        elseif fix.type == "circle" and move.type == "circle"
+            Vx, Vy = move.x - fix.x, move.y - fix.y
+            distance = vector.len(Vx, Vy)
+
+            if distance < fix.r + move.r
+                Vx, Vy = vector.normalize(Vx, Vy)
+                mtv =
+                    x: Vx * (fix.r + move.r - distance)
+                    y: Vy * (fix.r + move.r - distance)
+                return true, mtv
+            else
+                return false, {x: 0, y:0}
+
         -- Colisão Polygon vs Polygon ou Polygon vs Rectangle
-        else
+        elseif fix.type ~= "circle" and move.type ~= "circle"
             overlap         = nil
             minOverlap1     = nil
             minOverlap2     = nil
@@ -291,6 +304,10 @@ class allcoll
         for i = 1, #@shapes
             if @shapes[i].behavior ~= "static"
                 @shapes[i]\move(@gravity.x * dt, @gravity.y * dt, @shapes[i])
+
+    drawAllShapes: () =>
+        for i = 1, #@shapes
+            @shapes[i]\draw!
 
     -- a is the shape that moved and b is the shape that collided when a moved
     collisionStandartTreatment: (a, b, mtv, rotated) =>

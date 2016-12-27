@@ -1,12 +1,13 @@
 require "allcoll"
 aabb      = require "aabb"
+circle    = require "circle"
 polygon   = require "polygon"
 rectangle = require "rectangle"
 
 love.load = ->
     export floor  = rectangle(900, 100, 0, "static", "middle", "floor")
-    export shape1 = aabb(100, 100, "dynamic", "middle", "aabb")
-    export shape2 = polygon({0,-50,30,-20,10,40,-10,40,-30,-20}, nil, "dynamic", "polygon")
+    export shape1 = circle(50, "dynamic", "circleMenor")
+    export shape2 = circle(60, "dynamic", "circleMaior")
     export shape3 = polygon(nil, nil, "static", "polygon2")
 
     shape1\moveTo(200, 200)
@@ -44,8 +45,8 @@ love.update = (dt) ->
 
     -- shape1\rotate(dt)
     -- shape2\rotate(dt)
-    shape3\rotate(dt)
-    AC\update(dt)
+    -- shape3\rotate(dt)
+    -- AC\update(dt)
 
 love.draw = ->
     shape1\drawShape!

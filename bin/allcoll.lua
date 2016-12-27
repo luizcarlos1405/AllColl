@@ -46,7 +46,23 @@ do
           return true, mtv
         end
         return false, mtv
-      else
+      elseif fix.type == "circle" and move.type == "circle" then
+        local Vx, Vy = move.x - fix.x, move.y - fix.y
+        local distance = vector.len(Vx, Vy)
+        if distance < fix.r + move.r then
+          Vx, Vy = vector.normalize(Vx, Vy)
+          mtv = {
+            x = Vx * (fix.r + move.r - distance),
+            y = Vy * (fix.r + move.r - distance)
+          }
+          return true, mtv
+        else
+          return false, {
+            x = 0,
+            y = 0
+          }
+        end
+      elseif fix.type ~= "circle" and move.type ~= "circle" then
         local overlap = nil
         local minOverlap1 = nil
         local minOverlap2 = nil
@@ -332,6 +348,11 @@ do
         if self.shapes[i].behavior ~= "static" then
           self.shapes[i]:move(self.gravity.x * dt, self.gravity.y * dt, self.shapes[i])
         end
+      end
+    end,
+    drawAllShapes = function(self)
+      for i = 1, #self.shapes do
+        self.shapes[i]:draw()
       end
     end,
     collisionStandartTreatment = function(self, a, b, mtv, rotated)

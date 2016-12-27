@@ -1,22 +1,12 @@
 require("allcoll")
 local aabb = require("aabb")
+local circle = require("circle")
 local polygon = require("polygon")
 local rectangle = require("rectangle")
 love.load = function()
   floor = rectangle(900, 100, 0, "static", "middle", "floor")
-  shape1 = aabb(100, 100, "dynamic", "middle", "aabb")
-  shape2 = polygon({
-    0,
-    -50,
-    30,
-    -20,
-    10,
-    40,
-    -10,
-    40,
-    -30,
-    -20
-  }, nil, "dynamic", "polygon")
+  shape1 = circle(50, "dynamic", "circleMenor")
+  shape2 = circle(60, "dynamic", "circleMaior")
   shape3 = polygon(nil, nil, "static", "polygon2")
   shape1:moveTo(200, 200)
   shape2:moveTo(600, 200)
@@ -56,10 +46,8 @@ love.update = function(dt)
     shape2:rotate(-dt * 3)
   end
   if love.keyboard.isDown("p") then
-    shape2:setAngle(math.pi / 4)
+    return shape2:setAngle(math.pi / 4)
   end
-  shape3:rotate(dt)
-  return AC:update(dt)
 end
 love.draw = function()
   shape1:drawShape()
