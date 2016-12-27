@@ -12,7 +12,25 @@ do
     move = function(self, dx, dy)
       self.x = self.x + dx
       self.y = self.y + dy
-      local _list_0 = self.AC.shapes
+      self.points = {
+        {
+          x = self.x - self.offset.x,
+          y = self.y - self.offset.y
+        },
+        {
+          x = self.x - self.offset.x + self.w,
+          y = self.y - self.offset.y
+        },
+        {
+          x = self.x - self.offset.x + self.w,
+          y = self.y - self.offset.y + self.h
+        },
+        {
+          x = self.x - self.offset.x,
+          y = self.y - self.offset.y + self.h
+        }
+      }
+      local _list_0 = AC.shapes
       for _index_0 = 1, #_list_0 do
         local _continue_0 = false
         repeat
@@ -21,17 +39,9 @@ do
             _continue_0 = true
             break
           end
-          local coll, mtv = self.AC:isColl(shape, self)
+          local coll, mtv = AC:isColliding(shape, self)
           if coll then
-            if shape.behavior == "static" then
-              self.x = self.x + -mtv.x
-              self.y = self.y + -mtv.y
-            elseif shape.behavior == "dynamic" then
-              self.x = self.x + -mtv.x / 2
-              self.y = self.y + -mtv.y / 2
-              shape.x = shape.x + (mtv.x / 2)
-              shape.y = shape.y + (mtv.y / 2)
-            end
+            self:collided(shape, mtv, false)
           end
           _continue_0 = true
         until true
@@ -43,11 +53,32 @@ do
     moveTo = function(self, x, y)
       self.x = x
       self.y = y
+      self.points = {
+        {
+          x = self.x - self.offset.x,
+          y = self.y - self.offset.y
+        },
+        {
+          x = self.x - self.offset.x + self.w,
+          y = self.y - self.offset.y
+        },
+        {
+          x = self.x - self.offset.x + self.w,
+          y = self.y - self.offset.y + self.h
+        },
+        {
+          x = self.x - self.offset.x,
+          y = self.y - self.offset.y + self.h
+        }
+      }
+    end,
+    collided = function(self, shape, mtv, rotated)
+      return AC:collisionStandartTreatment(self, shape, mtv, rotated)
     end
   }
   _base_0.__index = _base_0
   _class_0 = setmetatable({
-    __init = function(self, AC, w, h, behavior, offset, name)
+    __init = function(self, w, h, behavior, offset, name)
       if w == nil then
         w = 42
       end
@@ -66,7 +97,6 @@ do
       if name == nil then
         name = "aabb"
       end
-      self.AC = AC
       self.x = 0
       self.y = 0
       self.w = w
@@ -88,7 +118,25 @@ do
           y = offset[2]
         }
       end
-      return self.AC:addShape(self)
+      self.points = {
+        {
+          x = self.x - self.offset.x,
+          y = self.y - self.offset.y
+        },
+        {
+          x = self.x - self.offset.x + self.w,
+          y = self.y - self.offset.y
+        },
+        {
+          x = self.x - self.offset.x + self.w,
+          y = self.y - self.offset.y + self.h
+        },
+        {
+          x = self.x - self.offset.x,
+          y = self.y - self.offset.y + self.h
+        }
+      }
+      return AC:addShape(self)
     end,
     __base = _base_0,
     __name = "aabb"

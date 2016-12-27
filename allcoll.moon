@@ -14,7 +14,7 @@ class allcoll
     -- coll é boleano se houve ou não a colisão, mtv é uma table que é um vetor e contém
     -- mtv.x o quanto é necessário mover em x para separ os shapes e mtv.y semelhante
     -- O argumento fix é um aabb que não se moverá e o move é um aabb que se moverá para separá-los
-    isColl: (fix, move) =>
+    isColliding: (fix, move) =>
         mtv = {x:0, y:0}
 
         -- Colisão aabb vs aabb
@@ -41,55 +41,36 @@ class allcoll
 
             return false, mtv
 
-        -- Colisão Rectangle vs Rectangle
-        elseif fix.type == "rectangle" and move.type == "rectangle"
-            overlap = nil
-            -- Processa-se os eixos do shape fix e do move
-            -- Cancela processamento e retorna caso algum retorne 0
-            minOverlap1, mtv1 = @processRectanglePoints(fix, move)
-            if minOverlap1 == 0
-                return false, {x: 0, y:0}
-            minOverlap2, mtv2 = @processRectanglePoints(move, fix)
-            if minOverlap2 == 0
-                return false, {x: 0, y:0}
-
-            -- Dos dois overlaps mínimos ferentes aos shapes fix e move, pega-se o menor
-            if math.abs(minOverlap1) <= math.abs(minOverlap2)
-                mtv = mtv1
-                overlap = minOverlap1
-            else
-                -- Caso seja identificado o menor overlap no shape move, deve-se usar o oposto
-                -- do mtv
-                mtv = {-mtv2[1], -mtv2[2]}
-                overlap = minOverlap2
-
-            -- Finalmente, calcula-se o mtv real
-            mtv.x, mtv.y = vector.mul(overlap, mtv[1], mtv[2])
-
-            return true, mtv
-
-        -- elseif fix.type == "aabb" or move.type == "aabb"
-
         -- Colisão Polygon vs Polygon ou Polygon vs Rectangle
         else
-            overlap = nil
+            overlap         = nil
+            minOverlap1     = nil
+            minOverlap2     = nil
+            mtv, mtv1, mtv2 = {}
 
             -- Processa-se os eixos do shape fix e do move
             -- Cancela processamento e retorna caso algum retorne 0
-            minOverlap1, mtv1 = @processAllPoints(fix, move)
+            if fix.type == "polygon"
+                minOverlap1, mtv1 = @processAllPoints(fix, move)
+            else
+                minOverlap1, mtv1 = @processRectanglePoints(fix, move)
             if minOverlap1 == 0
                 return false, {x: 0, y:0}
-            minOverlap2, mtv2 = @processAllPoints(move, fix)
+
+            if move.type == "polygon"
+                minOverlap2, mtv2 = @processAllPoints(move, fix)
+            else
+                minOverlap2, mtv2 = @processRectanglePoints(move, fix)
             if minOverlap2 == 0
                 return false, {x: 0, y:0}
 
-            -- Dos dois overlaps mínimos ferentes aos shapes fix e move, pega-se o menor
+            -- Dos dois overlaps mínimos referentes aos shapes fix e move, pega-se o menor
             if math.abs(minOverlap1) <= math.abs(minOverlap2)
                 mtv = mtv1
                 overlap = minOverlap1
             else
                 -- Caso seja identificado o menor overlap no shape move, deve-se usar o oposto
-                -- do mtv
+                -- do mtv isso se deve à inversão do shape base
                 mtv = {-mtv2[1], -mtv2[2]}
                 overlap = minOverlap2
 
@@ -97,9 +78,6 @@ class allcoll
             mtv.x, mtv.y = vector.mul(overlap, mtv[1], mtv[2])
 
             return true, mtv
-
-        -- elseif fix.type == "polygon" and move.type == "polygon"
-
 
     -- Adiciona um shape à table de shapes
     addShape: (shape) =>
@@ -176,7 +154,7 @@ class allcoll
                 mtv = {Vx, Vy}
 
         return minOverlap, mtv
-
+    -- Usado para comprar com os eixos perpendiculares de um rectangle um um aabb
     processRectanglePoints: (S1, S2) =>
         mtv        = {0, 0}
         proj       = 0
@@ -265,20 +243,27 @@ class allcoll
         elseif polygon.r < -2*math.pi
             polygon.r = -polygon.r % (2*math.pi)
 
-        -- Treat collision
+        -- Test collision
         for shape in *@shapes
             continue if shape == polygon
-            coll, mtv = @isColl(shape, polygon)
+            coll, mtv = @isColliding(shape, polygon)
             if coll
-                if polygon.behavior == "static" and shape.behavior == "dynamic"
-                    @movePolygon(-mtv.x, -mtv.y, shape)
+                polygon\collided(shape, mtv, true)
 
-                elseif polygon.behavior == "dynamic" and shape.behavior == "dynamic"
-                    @movePolygon(mtv.x, mtv.y, polygon)
-                    @movePolygon(-mtv.x, -mtv.y, shape)
+    setPolygonAngle: (a, polygon) =>
+        da = a - polygon.r
+        polygon.r = a
 
-                elseif polygon.behavior == "dynamic" and shape.behavior == "statics"
-                    @movePolygon(mtv.x, mtv.y, polygon)
+        for i = 1, #polygon.points
+            nx, ny = vector.rotate(da, polygon.points[i].x - polygon.x, polygon.points[i].y - polygon.y)
+            polygon.points[i].x = nx + polygon.x
+            polygon.points[i].y = ny + polygon.y
+
+        -- mantém polygon.r entre -2*pi e 2*pi
+        if polygon.r > 2*math.pi
+            polygon.r = polygon.r % (2*math.pi)
+        elseif polygon.r < 0
+            polygon.r = 2*math.pi - polygon.r % (2*math.pi)
 
     movePolygon: (dx, dy, polygon) =>
         polygon.x += dx
@@ -289,37 +274,43 @@ class allcoll
 
         for shape in *@shapes
             continue if shape == polygon
-            coll, mtv = @isColl(shape, polygon)
+            coll, mtv = @isColliding(shape, polygon)
             if coll
-                if shape.behavior == "static"
-                    -- @movePolygon(mtv.x, mtv.y, polygon)
-                    polygon.y += mtv.y
-                    polygon.x += mtv.x
-                    for i = 1, #polygon.points
-                        polygon.points[i].x += mtv.x
-                        polygon.points[i].y += mtv.y
-                elseif shape.behavior == "dynamic"
-                    polygon.y += mtv.y/2
-                    polygon.x += mtv.x/2
-                    for i = 1, #polygon.points
-                        polygon.points[i].x += mtv.x/2
-                        polygon.points[i].y += mtv.y/2
-                    shape.y -= mtv.y/2
-                    shape.x -= mtv.x/2
-                    for i = 1, #shape.points
-                        shape.points[i].x -= mtv.x/2
-                        shape.points[i].y -= mtv.y/2
-
+                polygon\collided(shape, mtv, false)
 
     movePolygonTo: (x, y, polygon) =>
         dx, dy = x - polygon.x, y - polygon.y
 
-        @movePolygon(dx, dy, polygon)
+        polygon.x += dx
+        polygon.y += dy
+        for i = 1, #polygon.points
+            polygon.points[i].x += dx
+            polygon.points[i].y += dy
 
     update: (dt) =>
         for i = 1, #@shapes
             if @shapes[i].behavior ~= "static"
-                @movePolygon(@gravity.x * dt, @gravity.y * dt, @shapes[i])
+                @shapes[i]\move(@gravity.x * dt, @gravity.y * dt, @shapes[i])
 
+    -- a is the shape that moved and b is the shape that collided when a moved
+    collisionStandartTreatment: (a, b, mtv, rotated) =>
+        if rotated
+            if a.behavior == "dynamic"
+                if b.behavior == "static"
+                    a\moveTo(a.x + mtv.x, a.y + mtv.y)
+                elseif b.behavior == "dynamic"
+                    a\moveTo(a.x + mtv.x/2, a.y + mtv.y/2)
+                    b\moveTo(b.x - mtv.x/2, b.y - mtv.y/2)
+            elseif a.behavior == "static"
+                if b.behavior == "dynamic"
+                    b\moveTo(b.x - mtv.x, b.y - mtv.y)
 
-return allcoll
+        else
+            -- print "mtv.x: #{mtv.x} mtv.y: #{mtv.y}"
+            if b.behavior == "static"
+                a\moveTo(a.x + mtv.x, a.y + mtv.y)
+            elseif b.behavior == "dynamic"
+                a\moveTo(a.x + mtv.x/2, a.y + mtv.y/2)
+                b\moveTo(b.x - mtv.x/2, b.y - mtv.y/2)
+
+export AC = allcoll!

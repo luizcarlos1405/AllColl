@@ -28,26 +28,23 @@ do
       return AC:rotatePolygon(da, self)
     end,
     setAngle = function(self, a)
-      self:rotate(a - self.r)
-      local _ = self.r == a
-      if self.r > 2 * math.pi then
-        self.r = self.r % (2 * math.pi)
-      elseif self.r < 0 then
-        self.r = 2 * math.pi - self.r % (2 * math.pi)
-      end
+      return AC:setPolygonAngle(a, self)
+    end,
+    collided = function(self, other, mtv, rotated)
+      return AC:collisionStandartTreatment(self, other, mtv, rotated)
     end
   }
   _base_0.__index = _base_0
   _class_0 = setmetatable({
-    __init = function(self, AC, r, w, h, behavior, offset, name)
-      if r == nil then
-        r = 0
-      end
+    __init = function(self, w, h, r, behavior, offset, name)
       if w == nil then
         w = 42
       end
       if h == nil then
         h = 42
+      end
+      if r == nil then
+        r = 0
       end
       if behavior == nil then
         behavior = "static"
@@ -59,9 +56,8 @@ do
         }
       end
       if name == nil then
-        name = "aabb"
+        name = "rectangle"
       end
-      self.AC = AC
       self.x = 0
       self.y = 0
       self.r = 0
@@ -70,6 +66,9 @@ do
       self.behavior = behavior
       self.name = name
       self.type = "rectangle"
+      if behavior ~= "static" and behavior ~= "dynamic" then
+        error("Invalid shape behavior. Valids shape behaviors are 'kynetic' and 'dynamic'")
+      end
       if offset == "middle" then
         self.offset = {
           x = w / 2,
@@ -100,7 +99,7 @@ do
         }
       }
       self:setAngle(r)
-      return self.AC:addShape(self)
+      return AC:addShape(self)
     end,
     __base = _base_0,
     __name = "rectangle"

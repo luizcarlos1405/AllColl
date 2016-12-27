@@ -1,8 +1,7 @@
 -- AABB is rectangular shape that does'nt allow rotation
 
 class aabb
-    new: (AC, w = 42, h = 42, behavior = "static", offset = {0, 0}, name = "aabb") =>
-        @AC       = AC
+    new: (w = 42, h = 42, behavior = "static", offset = {0, 0}, name = "aabb") =>
         @x        = 0
         @y        = 0
         @w        = w
@@ -19,7 +18,14 @@ class aabb
         else
             @offset = {x:offset[1], y:offset[2]}
 
-        @AC\addShape(@)
+        @points = {
+            {x: @x - @offset.x,      y: @y - @offset.y}
+            {x: @x - @offset.x + @w, y: @y - @offset.y}
+            {x: @x - @offset.x + @w, y: @y - @offset.y + @h}
+            {x: @x - @offset.x,      y: @y - @offset.y + @h}
+        }
+
+        AC\addShape(@)
 
     drawShape: =>
         love.graphics.rectangle("line", @x - @offset.x, @y - @offset.y, @w, @h)
@@ -32,23 +38,31 @@ class aabb
         @x += dx
         @y += dy
 
-        for shape in *@AC.shapes
+        @points = {
+            {x: @x - @offset.x,      y: @y - @offset.y}
+            {x: @x - @offset.x + @w, y: @y - @offset.y}
+            {x: @x - @offset.x + @w, y: @y - @offset.y + @h}
+            {x: @x - @offset.x,      y: @y - @offset.y + @h}
+        }
+
+        for shape in *AC.shapes
             continue if shape == @
-
-            coll, mtv = @AC\isColl(shape, @)
+            coll, mtv = AC\isColliding(shape, @)
             if coll
-                if shape.behavior == "static"
-                    @.x += -mtv.x
-                    @.y += -mtv.y
-
-                elseif shape.behavior == "dynamic"
-                    @.x     += -mtv.x/2
-                    @.y     += -mtv.y/2
-                    shape.x += mtv.x/2
-                    shape.y += mtv.y/2
+                @collided(shape, mtv, false)
 
     moveTo: (x, y) =>
         @x = x
         @y = y
+
+        @points = {
+            {x: @x - @offset.x,      y: @y - @offset.y}
+            {x: @x - @offset.x + @w, y: @y - @offset.y}
+            {x: @x - @offset.x + @w, y: @y - @offset.y + @h}
+            {x: @x - @offset.x,      y: @y - @offset.y + @h}
+        }
+
+    collided: (shape, mtv,  rotated) =>
+        AC\collisionStandartTreatment(@, shape, mtv, rotated)
 
 return aabb

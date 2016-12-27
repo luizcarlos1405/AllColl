@@ -1,27 +1,18 @@
--- Rectangles are polygons and they can be rotated, for rectangular shapes that can
--- be rotated is better a rectangle than a 4 sides polygon
+-- Polygons have to be concave, they can be rotated
 
 vector = require "../libs/vector-light"
 
-class rectangle
-    new: (AC, points = {0, 0, 100, 0, 100, 100}, r = 0, h = 42, behavior = "static", offset = {0, 0}, name = "aabb") =>
+class polygon
+    new: (points = {0, 0, 100, 0, 100, 100}, r = 0, behavior = "static", name = "polygon") =>
         if #points % 2 ~= 0 or #points < 6
             error("Not full points or not enough points")
-        @AC       = AC
-        @x        = offset[1]
-        @y        = offset[2]
+        @x        = 0
+        @y        = 0
         @r        = r
-        @w        = w
-        @h        = h
         @behavior = behavior
         @name     = name
         @type     = "polygon"
         @points   = {}
-
-        if offset == "middle"
-            @offset = {x: w/2, y:h/2}
-        else
-            @offset = {x:offset[1], y:offset[2]}
 
         for i = 1, math.ceil(#points/2)
             @points[i] = {}
@@ -31,7 +22,7 @@ class rectangle
 
         @setAngle(r)
         -- Adiciona à tabe de shapes
-        @AC\addShape(@)
+        AC\addShape(@)
 
     drawShape: =>
         for i = 1, #@points
@@ -61,13 +52,9 @@ class rectangle
         AC\rotatePolygon(da, @)
 
     setAngle: (a) =>
-        @rotate(a-@r)
-        @r == a
-        -- mantém @r entre -2*pi e 2*pi
-        if @r > 2*math.pi
-            @r = @r % (2*math.pi)
-        elseif @r < 0
-            @r = 2*math.pi - @r % (2*math.pi)
+        AC\setPolygonAngle(a, @)
 
+    collided: (other, mtv, rotated) =>
+        AC\collisionStandartTreatment(@, other, mtv, rotated)
 
-return rectangle
+return polygon

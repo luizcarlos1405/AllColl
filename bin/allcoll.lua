@@ -9,7 +9,7 @@ do
         y = gy
       }
     end,
-    isColl = function(self, fix, move)
+    isColliding = function(self, fix, move)
       local mtv = {
         x = 0,
         y = 0
@@ -46,44 +46,28 @@ do
           return true, mtv
         end
         return false, mtv
-      elseif fix.type == "rectangle" and move.type == "rectangle" then
-        local overlap = nil
-        local minOverlap1, mtv1 = self:processRectanglePoints(fix, move)
-        if minOverlap1 == 0 then
-          return false, {
-            x = 0,
-            y = 0
-          }
-        end
-        local minOverlap2, mtv2 = self:processRectanglePoints(move, fix)
-        if minOverlap2 == 0 then
-          return false, {
-            x = 0,
-            y = 0
-          }
-        end
-        if math.abs(minOverlap1) <= math.abs(minOverlap2) then
-          mtv = mtv1
-          overlap = minOverlap1
-        else
-          mtv = {
-            -mtv2[1],
-            -mtv2[2]
-          }
-          overlap = minOverlap2
-        end
-        mtv.x, mtv.y = vector.mul(overlap, mtv[1], mtv[2])
-        return true, mtv
       else
         local overlap = nil
-        local minOverlap1, mtv1 = self:processAllPoints(fix, move)
+        local minOverlap1 = nil
+        local minOverlap2 = nil
+        local mtv1, mtv2
+        mtv, mtv1, mtv2 = { }
+        if fix.type == "polygon" then
+          minOverlap1, mtv1 = self:processAllPoints(fix, move)
+        else
+          minOverlap1, mtv1 = self:processRectanglePoints(fix, move)
+        end
         if minOverlap1 == 0 then
           return false, {
             x = 0,
             y = 0
           }
         end
-        local minOverlap2, mtv2 = self:processAllPoints(move, fix)
+        if move.type == "polygon" then
+          minOverlap2, mtv2 = self:processAllPoints(move, fix)
+        else
+          minOverlap2, mtv2 = self:processRectanglePoints(move, fix)
+        end
         if minOverlap2 == 0 then
           return false, {
             x = 0,
@@ -282,22 +266,29 @@ do
             _continue_0 = true
             break
           end
-          local coll, mtv = self:isColl(shape, polygon)
+          local coll, mtv = self:isColliding(shape, polygon)
           if coll then
-            if polygon.behavior == "static" and shape.behavior == "dynamic" then
-              self:movePolygon(-mtv.x, -mtv.y, shape)
-            elseif polygon.behavior == "dynamic" and shape.behavior == "dynamic" then
-              self:movePolygon(mtv.x, mtv.y, polygon)
-              self:movePolygon(-mtv.x, -mtv.y, shape)
-            elseif polygon.behavior == "dynamic" and shape.behavior == "statics" then
-              self:movePolygon(mtv.x, mtv.y, polygon)
-            end
+            polygon:collided(shape, mtv, true)
           end
           _continue_0 = true
         until true
         if not _continue_0 then
           break
         end
+      end
+    end,
+    setPolygonAngle = function(self, a, polygon)
+      local da = a - polygon.r
+      polygon.r = a
+      for i = 1, #polygon.points do
+        local nx, ny = vector.rotate(da, polygon.points[i].x - polygon.x, polygon.points[i].y - polygon.y)
+        polygon.points[i].x = nx + polygon.x
+        polygon.points[i].y = ny + polygon.y
+      end
+      if polygon.r > 2 * math.pi then
+        polygon.r = polygon.r % (2 * math.pi)
+      elseif polygon.r < 0 then
+        polygon.r = 2 * math.pi - polygon.r % (2 * math.pi)
       end
     end,
     movePolygon = function(self, dx, dy, polygon)
@@ -316,29 +307,9 @@ do
             _continue_0 = true
             break
           end
-          local coll, mtv = self:isColl(shape, polygon)
+          local coll, mtv = self:isColliding(shape, polygon)
           if coll then
-            if shape.behavior == "static" then
-              polygon.y = polygon.y + mtv.y
-              polygon.x = polygon.x + mtv.x
-              for i = 1, #polygon.points do
-                polygon.points[i].x = polygon.points[i].x + mtv.x
-                polygon.points[i].y = polygon.points[i].y + mtv.y
-              end
-            elseif shape.behavior == "dynamic" then
-              polygon.y = polygon.y + (mtv.y / 2)
-              polygon.x = polygon.x + (mtv.x / 2)
-              for i = 1, #polygon.points do
-                polygon.points[i].x = polygon.points[i].x + (mtv.x / 2)
-                polygon.points[i].y = polygon.points[i].y + (mtv.y / 2)
-              end
-              shape.y = shape.y - (mtv.y / 2)
-              shape.x = shape.x - (mtv.x / 2)
-              for i = 1, #shape.points do
-                shape.points[i].x = shape.points[i].x - (mtv.x / 2)
-                shape.points[i].y = shape.points[i].y - (mtv.y / 2)
-              end
-            end
+            polygon:collided(shape, mtv, false)
           end
           _continue_0 = true
         until true
@@ -349,12 +320,40 @@ do
     end,
     movePolygonTo = function(self, x, y, polygon)
       local dx, dy = x - polygon.x, y - polygon.y
-      return self:movePolygon(dx, dy, polygon)
+      polygon.x = polygon.x + dx
+      polygon.y = polygon.y + dy
+      for i = 1, #polygon.points do
+        polygon.points[i].x = polygon.points[i].x + dx
+        polygon.points[i].y = polygon.points[i].y + dy
+      end
     end,
     update = function(self, dt)
       for i = 1, #self.shapes do
         if self.shapes[i].behavior ~= "static" then
-          self:movePolygon(self.gravity.x * dt, self.gravity.y * dt, self.shapes[i])
+          self.shapes[i]:move(self.gravity.x * dt, self.gravity.y * dt, self.shapes[i])
+        end
+      end
+    end,
+    collisionStandartTreatment = function(self, a, b, mtv, rotated)
+      if rotated then
+        if a.behavior == "dynamic" then
+          if b.behavior == "static" then
+            return a:moveTo(a.x + mtv.x, a.y + mtv.y)
+          elseif b.behavior == "dynamic" then
+            a:moveTo(a.x + mtv.x / 2, a.y + mtv.y / 2)
+            return b:moveTo(b.x - mtv.x / 2, b.y - mtv.y / 2)
+          end
+        elseif a.behavior == "static" then
+          if b.behavior == "dynamic" then
+            return b:moveTo(b.x - mtv.x, b.y - mtv.y)
+          end
+        end
+      else
+        if b.behavior == "static" then
+          return a:moveTo(a.x + mtv.x, a.y + mtv.y)
+        elseif b.behavior == "dynamic" then
+          a:moveTo(a.x + mtv.x / 2, a.y + mtv.y / 2)
+          return b:moveTo(b.x - mtv.x / 2, b.y - mtv.y / 2)
         end
       end
     end
@@ -381,4 +380,4 @@ do
   _base_0.__class = _class_0
   allcoll = _class_0
 end
-return allcoll
+AC = allcoll()

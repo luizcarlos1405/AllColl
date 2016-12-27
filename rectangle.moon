@@ -4,8 +4,7 @@
 vector = require "../libs/vector-light"
 
 class rectangle
-    new: (AC, r = 0, w = 42, h = 42, behavior = "static", offset = {0, 0}, name = "aabb") =>
-        @AC       = AC
+    new: (w = 42, h = 42, r = 0, behavior = "static", offset = {0, 0}, name = "rectangle") =>
         @x        = 0
         @y        = 0
         @r        = 0
@@ -14,6 +13,9 @@ class rectangle
         @behavior = behavior
         @name     = name
         @type     = "rectangle"
+
+        if behavior ~= "static" and behavior ~= "dynamic"
+            error("Invalid shape behavior. Valids shape behaviors are 'kynetic' and 'dynamic'")
 
         if offset == "middle"
             @offset = {x: w/2, y:h/2}
@@ -29,7 +31,7 @@ class rectangle
 
         @setAngle(r)
         -- Adiciona à tabe de shapes
-        @AC\addShape(@)
+        AC\addShape(@)
 
     drawShape: =>
         for i = 1, #@points
@@ -59,13 +61,10 @@ class rectangle
         AC\rotatePolygon(da, @)
 
     setAngle: (a) =>
-        @rotate(a-@r)
-        @r == a
-        -- mantém @r entre -2*pi e 2*pi
-        if @r > 2*math.pi
-            @r = @r % (2*math.pi)
-        elseif @r < 0
-            @r = 2*math.pi - @r % (2*math.pi)
+        AC\setPolygonAngle(a, @)
 
+    -- Callback function that treats collision
+    collided: (other, mtv, rotated) =>
+        AC\collisionStandartTreatment(@, other, mtv, rotated)
 
 return rectangle

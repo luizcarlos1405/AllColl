@@ -1,12 +1,11 @@
 require("allcoll")
-local allcoll = require("allcoll")
 local aabb = require("aabb")
 local polygon = require("polygon")
 local rectangle = require("rectangle")
 love.load = function()
-  AC = allcoll()
-  aabb1 = rectangle(AC, 0, 100, 100, "dynamic", "middle", "S1")
-  aabb2 = polygon(AC, {
+  floor = rectangle(900, 100, 0, "static", "middle", "floor")
+  shape1 = aabb(100, 100, "dynamic", "middle", "aabb")
+  shape2 = polygon({
     0,
     -50,
     30,
@@ -17,72 +16,57 @@ love.load = function()
     40,
     -30,
     -20
-  }, nil, nil, "dynamic", {
-    0,
-    0
-  }, "S2")
-  aabb3 = polygon(AC, nil, nil, nil, "static", {
-    50,
-    50
-  }, "S3")
-  floor = rectangle(AC, 0, 900, 100, "static", "middle", "floor")
-  aabb1:moveTo(200, 200)
-  aabb2:moveTo(600, 200)
-  aabb3:moveTo(love.graphics.getWidth() / 2, love.graphics.getHeight() / 2)
-  return floor:moveTo(love.graphics.getWidth() / 2, love.graphics.getHeight() - 50)
+  }, nil, "dynamic", "polygon")
+  shape3 = polygon(nil, nil, "static", "polygon2")
+  shape1:moveTo(200, 200)
+  shape2:moveTo(600, 200)
+  shape3:moveTo(love.graphics.getWidth() / 2, love.graphics.getHeight() / 2)
+  floor:moveTo(love.graphics.getWidth() / 2, love.graphics.getHeight() - 50)
+  return AC:setGravity(0, 200)
 end
 love.update = function(dt)
-  AC:update(dt)
   if love.keyboard.isDown("w") then
-    aabb1:move(0, -400 * dt)
+    shape1:move(0, -400 * dt)
   end
   if love.keyboard.isDown("a") then
-    aabb1:move(-400 * dt, 0)
+    shape1:move(-400 * dt, 0)
   end
   if love.keyboard.isDown("s") then
-    aabb1:move(0, 400 * dt)
+    shape1:move(0, 400 * dt)
   end
   if love.keyboard.isDown("d") then
-    aabb1:move(400 * dt, 0)
-  end
-  if love.keyboard.isDown("e") then
-    aabb1:rotate(dt)
-  end
-  if love.keyboard.isDown("q") then
-    aabb1:rotate(-dt)
-  end
-  if love.keyboard.isDown("r") then
-    aabb1:setAngle(math.pi / 4)
+    shape1:move(400 * dt, 0)
   end
   if love.keyboard.isDown("i") then
-    aabb2:move(0, -400 * dt)
+    shape2:move(0, -400 * dt)
   end
   if love.keyboard.isDown("j") then
-    aabb2:move(-400 * dt, 0)
+    shape2:move(-400 * dt, 0)
   end
   if love.keyboard.isDown("k") then
-    aabb2:move(0, 400 * dt)
+    shape2:move(0, 400 * dt)
   end
   if love.keyboard.isDown("l") then
-    aabb2:move(400 * dt, 0)
+    shape2:move(400 * dt, 0)
   end
   if love.keyboard.isDown("o") then
-    aabb2:rotate(dt)
+    shape2:rotate(dt * 3)
   end
   if love.keyboard.isDown("u") then
-    aabb2:rotate(-dt)
+    shape2:rotate(-dt * 3)
   end
   if love.keyboard.isDown("p") then
-    aabb2:setAngle(math.pi / 4)
+    shape2:setAngle(math.pi / 4)
   end
-  return aabb3:rotate(dt)
+  shape3:rotate(dt)
+  return AC:update(dt)
 end
 love.draw = function()
-  aabb1:drawShape()
-  aabb2:drawShape()
-  aabb3:drawShape()
+  shape1:drawShape()
+  shape2:drawShape()
+  shape3:drawShape()
   floor:drawShape()
-  return love.graphics.print("S1.r: " .. tostring(aabb1.r) .. "\nS2.r: " .. tostring(aabb2.r) .. ".\nMove the Rectangle with W A S D and the Pentagon with I J K L.\nRotate the Rectantle with Q E and the Pentagon with U O.\nThe triangle is static.", 20, 20)
+  return love.graphics.print("S1.r: " .. tostring(shape1.r) .. "\nS2.r: " .. tostring(shape2.r) .. ".\nMove the Rectangle with W A S D and the Pentagon with I J K L.\nRotate the Rectantle with Q E and the Pentagon with U O.\nThe triangle is static.", 20, 20)
 end
 love.keypressed = function(key)
   if key == "escape" then

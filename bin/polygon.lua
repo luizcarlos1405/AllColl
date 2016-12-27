@@ -1,5 +1,5 @@
 local vector = require("../libs/vector-light")
-local rectangle
+local polygon
 do
   local _class_0
   local _base_0 = {
@@ -28,18 +28,15 @@ do
       return AC:rotatePolygon(da, self)
     end,
     setAngle = function(self, a)
-      self:rotate(a - self.r)
-      local _ = self.r == a
-      if self.r > 2 * math.pi then
-        self.r = self.r % (2 * math.pi)
-      elseif self.r < 0 then
-        self.r = 2 * math.pi - self.r % (2 * math.pi)
-      end
+      return AC:setPolygonAngle(a, self)
+    end,
+    collided = function(self, other, mtv, rotated)
+      return AC:collisionStandartTreatment(self, other, mtv, rotated)
     end
   }
   _base_0.__index = _base_0
   _class_0 = setmetatable({
-    __init = function(self, AC, points, r, h, behavior, offset, name)
+    __init = function(self, points, r, behavior, name)
       if points == nil then
         points = {
           0,
@@ -53,45 +50,22 @@ do
       if r == nil then
         r = 0
       end
-      if h == nil then
-        h = 42
-      end
       if behavior == nil then
         behavior = "static"
       end
-      if offset == nil then
-        offset = {
-          0,
-          0
-        }
-      end
       if name == nil then
-        name = "aabb"
+        name = "polygon"
       end
       if #points % 2 ~= 0 or #points < 6 then
         error("Not full points or not enough points")
       end
-      self.AC = AC
-      self.x = offset[1]
-      self.y = offset[2]
+      self.x = 0
+      self.y = 0
       self.r = r
-      self.w = w
-      self.h = h
       self.behavior = behavior
       self.name = name
       self.type = "polygon"
       self.points = { }
-      if offset == "middle" then
-        self.offset = {
-          x = w / 2,
-          y = h / 2
-        }
-      else
-        self.offset = {
-          x = offset[1],
-          y = offset[2]
-        }
-      end
       for i = 1, math.ceil(#points / 2) do
         self.points[i] = { }
         self.points[i].x = points[2 * (i - 1) + 1]
@@ -100,10 +74,10 @@ do
         end
       end
       self:setAngle(r)
-      return self.AC:addShape(self)
+      return AC:addShape(self)
     end,
     __base = _base_0,
-    __name = "rectangle"
+    __name = "polygon"
   }, {
     __index = _base_0,
     __call = function(cls, ...)
@@ -113,6 +87,6 @@ do
     end
   })
   _base_0.__class = _class_0
-  rectangle = _class_0
+  polygon = _class_0
 end
-return rectangle
+return polygon
